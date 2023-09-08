@@ -102,7 +102,7 @@ public struct ControlNet: ResourceManaging {
                 for k in result.featureNames {
                     let newValue = result.featureValue(for: k)!.multiArrayValue!
                     if modelIndex == 0 {
-                        outputs[n][k] = MLShapedArray<Float32>(newValue)
+                        outputs[n][k] = MLShapedArray<Float32>(converting: newValue)
                     } else {
                         let outputArray = MLMultiArray(outputs[n][k]!)
                         let count = newValue.count
