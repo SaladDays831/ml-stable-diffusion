@@ -96,25 +96,39 @@ public struct ControlNet: ResourceManaging {
                     shapes: results.features(at: 0).featureValueDictionary
                 )
             }
-            
+
+//            for n in 0..<results.count {
+//                let result = results.features(at: n)
+//                for k in result.featureNames {
+//                    let newValue = result.featureValue(for: k)!.multiArrayValue!
+//                    if modelIndex == 0 {
+//                        outputs[n][k] = MLShapedArray<Float32>(converting: newValue)
+//                    } else {
+//                        if var outputArray = outputs[n][k] {
+//                            let newValueShapedArray = MLShapedArray<Float32>(converting: newValue)
+//                            let count = newValueShapedArray.count
+//                            outputArray.withUnsafeMutableShapedBufferPointer { outputArr, _, _ in
+//                                newValueShapedArray.withUnsafeShapedBufferPointer { inputArr, _, _ in
+//                                    if let inputAddress = inputArr.baseAddress,
+//                                       let outputAddress = outputArr.baseAddress {
+//                                        vDSP_vadd(inputAddress, 1, outputAddress, 1, outputAddress, 1, vDSP_Length(count))
+//                                    }
+//                                }
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+
             for n in 0..<results.count {
                 let result = results.features(at: n)
                 for k in result.featureNames {
-                    let newValue = result.featureValue(for: k)!.multiArrayValue!
+                    let newValue = result.featureValue(for: k)!.shapedArrayValue(of: Float32.self)!
                     if modelIndex == 0 {
-                        outputs[n][k] = MLShapedArray<Float32>(converting: newValue)
+                        outputs[n][k] = newValue
                     } else {
-                        if var outputArray = outputs[n][k] {
-                            let newValueShapedArray = MLShapedArray<Float32>(converting: newValue)
-                            let count = newValueShapedArray.count
-                            outputArray.withUnsafeMutableShapedBufferPointer { outputArr, _, _ in
-                                newValueShapedArray.withUnsafeShapedBufferPointer { inputArr, _, _ in
-                                    if let inputAddress = inputArr.baseAddress,
-                                       let outputAddress = outputArr.baseAddress {
-                                        vDSP_vadd(inputAddress, 1, outputAddress, 1, outputAddress, 1, vDSP_Length(count))
-                                    }
-                                }
-                            }
+                        outputs[n][k]!.withUnsafeMutableShapedBufferPointer { pt, _, _ in
+                            for (i, v) in newValue.scalars.enumerated() { pt[i] += v }
                         }
                     }
                 }
