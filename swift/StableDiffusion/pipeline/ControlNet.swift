@@ -104,11 +104,18 @@ public struct ControlNet: ResourceManaging {
                     if modelIndex == 0 {
                         outputs[n][k] = MLShapedArray<Float32>(converting: newValue)
                     } else {
-                        let outputArray = MLMultiArray(outputs[n][k]!)
-                        let count = newValue.count
-                        let inputPointer = newValue.dataPointer.assumingMemoryBound(to: Float.self)
-                        let outputPointer = outputArray.dataPointer.assumingMemoryBound(to: Float.self)
-                        vDSP_vadd(inputPointer, 1, outputPointer, 1, outputPointer, 1, vDSP_Length(count))
+                        if var outputArray = outputs[n][k] {
+                            let newValueShapedArray = MLShapedArray<Float32>(converting: newValue)
+                            let count = newValueShapedArray.count
+                            outputArray.withUnsafeMutableShapedBufferPointer { outputArr, _, _ in
+                                newValueShapedArray.withUnsafeShapedBufferPointer { inputArr, _, _ in
+                                    if let inputAddress = inputArr.baseAddress,
+                                       let outputAddress = outputArr.baseAddress {
+                                        vDSP_vadd(inputAddress, 1, outputAddress, 1, outputAddress, 1, vDSP_Length(count))
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
