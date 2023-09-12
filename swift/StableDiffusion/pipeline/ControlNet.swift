@@ -123,12 +123,13 @@ public struct ControlNet: ResourceManaging {
             for n in 0..<results.count {
                 let result = results.features(at: n)
                 for k in result.featureNames {
-                    let newValue = result.featureValue(for: k)!.shapedArrayValue(of: Float32.self)!
+                    let newValue = result.featureValue(for: k)!.multiArrayValue!
                     if modelIndex == 0 {
-                        outputs[n][k] = newValue
+                        outputs[n][k] = MLShapedArray<Float32>(converting: newValue)
                     } else {
+                        let shapedArray = MLShapedArray<Float32>(converting: newValue)
                         outputs[n][k]!.withUnsafeMutableShapedBufferPointer { pt, _, _ in
-                            for (i, v) in newValue.scalars.enumerated() { pt[i] += v }
+                            for (i, v) in shapedArray.scalars.enumerated() { pt[i] += v }
                         }
                     }
                 }
